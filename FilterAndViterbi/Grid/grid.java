@@ -1,7 +1,12 @@
 package Grid;
 
 import Grid.gridSquare;
+
+import java.util.ArrayList;
+
+import Data.minHeap;
 import FilterAndViterbi.prob;
+
 /*
  * Author: Esther Shimanovich
  * Stores gridsquares and computes probability over them
@@ -12,6 +17,8 @@ public class grid {
 	private gridSquare[][] Grid = null;
 	private int size;
 	public String name = "";
+	public gridSquare highestProbSquare;
+	public static ArrayList<gridSquare> tenMostLikelyTrajectories = new ArrayList<gridSquare>();
 
 	public grid(String name) {
 		this.name = name;
@@ -42,7 +49,7 @@ public class grid {
 	}
 
 	// Sets Probability distributions after a movement is made
-	public void move(int up, int right) {
+	public void move(int down, int right) {
 		// For every square in the grid
 
 		for (int i = 0; i < this.size; i++) {
@@ -50,8 +57,8 @@ public class grid {
 				gridSquare currentSquare = this.getGrid()[i][j];
 				gridSquare formerSquare = null;
 				// get former square
-				if (!boundaryOrBlocked(i, j, -1 * up, -1 * right)) {
-					formerSquare = this.getGrid()[i - up][j - right];
+				if (!boundaryOrBlocked(i, j, -1 * down, -1 * right)) {
+					formerSquare = this.getGrid()[i - down][j - right];
 				}
 				// add probability of something moving towards it, given that
 				// former square is not blocked or null
@@ -61,8 +68,8 @@ public class grid {
 				}
 				// add probability of staying in same block
 				gridSquare nextSquare = null;
-				if (!boundaryOrBlocked(i, j, up, right)) {
-					nextSquare = this.getGrid()[i + up][j + right];
+				if (!boundaryOrBlocked(i, j, down, right)) {
+					nextSquare = this.getGrid()[i + down][j + right];
 				}
 				if (nextSquare != null) {
 					currentSquare.newProb += prob.stay * currentSquare.oldProb;
@@ -76,30 +83,34 @@ public class grid {
 	}
 
 	// Checks if it is a boundary or blocked cell
-	private boolean boundaryOrBlocked(int i, int j, int up, int right) {
+	public boolean boundaryOrBlocked(int i, int j, int down, int right) {
 		// Not a Boundary
-		if ((i + up < this.size) && (i + up >= 0) && (j + right < this.size) && (j + right >= 0)) {
+		if ((i + down < this.size) && (i + down >= 0) && (j + right < this.size) && (j + right >= 0)) {
 			// and not a Blocked Cell
-			if (!this.getGrid()[i + up][j + right].attribute.equals("B")) {
+			if (!this.getGrid()[i + down][j + right].attribute.equals("B")) {
 				return false;
 			}
 		}
 		return true;
 	}
-	
+
 	// Applies Viterbi Algorithm
 	// Takes max probability and stores the most likely sequence for each block
-	public void viterbi(int up, int right){
+	public void viterbi(int down, int right) {
 		for (int i = 0; i < this.size; i++) {
 			for (int j = 0; j < this.size; j++) {
-			gridSquare currentGrid = this.Grid[i][j];
-			if(currentGrid.probStay>= currentGrid.probArrive){
-				currentGrid.newProb = currentGrid.probStay;
-				currentGrid.sequence += " " + currentGrid.attribute;
-			} else{
-				currentGrid.newProb = currentGrid.probArrive;
-				currentGrid.sequence += " " +  this.Grid[i - up][j - right].attribute;
-			}
+				gridSquare currentGrid = this.Grid[i][j];
+				if (currentGrid.probStay >= currentGrid.probArrive) {
+					currentGrid.newProb = currentGrid.probStay;
+					if (input.saveSequences) {
+						currentGrid.newSequence = currentGrid.sequence + ", (" + i + ", " + j + ")";
+					}
+				} else if (!currentGrid.attribute.equals("B")) {
+					currentGrid.newProb = currentGrid.probArrive;
+					if (input.saveSequences) {
+						currentGrid.newSequence = this.Grid[i - down][j - right].sequence + ", (" + i + ", " + j + ")";
+					}
+				}
 			}
 		}
 	}
@@ -128,19 +139,38 @@ public class grid {
 	}
 
 	// Normalizes the Probabilities
+	// updates sequence
+	// detects highest probability
 	private void normalize(double probSum) {
+		this.highestProbSquare = this.Grid[0][0];
+		highestProbSquare.mostLikelySequence = true;
+		minHeap tenMostLikely = new minHeap();
 		for (int i = 0; i < this.size; i++) {
 			for (int j = 0; j < this.size; j++) {
 				gridSquare currentSquare = this.getGrid()[i][j];
+				if (input.activateTenMostLikely) {
+					tenMostLikely.insert(currentSquare);
+				}
+				currentSquare.sequence = currentSquare.newSequence;
 				if (!currentSquare.attribute.equals("B")) {
 					currentSquare.oldProb = currentSquare.newProb / probSum;
 					currentSquare.newProb = 0;
 				}
+				if (currentSquare.oldProb > highestProbSquare.oldProb) {
+					highestProbSquare.mostLikelySequence = false;
+					currentSquare.mostLikelySequence = true;
+					highestProbSquare = currentSquare;
+				}
+			}
+		}
+		if (input.activateTenMostLikely) {
+			// insert into ten most likely
+			for (int i = 0; i < 10; i++) {
+				tenMostLikelyTrajectories.add(tenMostLikely.delete());
 			}
 		}
 		/*
-		 * for debugging 
-		 * probSum = 0; for (int i = 0; i < this.size; i++) { for
+		 * for debugging probSum = 0; for (int i = 0; i < this.size; i++) { for
 		 * (int j = 0; j < this.size; j++) { gridSquare currentSquare =
 		 * this.getGrid()[i][j]; probSum += currentSquare.oldProb; } }
 		 * System.out.println(probSum);
@@ -155,7 +185,8 @@ public class grid {
 		Grid = grid;
 	}
 
-	// Print out the probabilities in a grid format on the console, for debugging
+	// Print out the probabilities in a grid format on the console, for
+	// debugging
 	public void printString() {
 		for (int i = 0; i < this.size; i++) {
 			for (int j = 0; j < this.size; j++) {

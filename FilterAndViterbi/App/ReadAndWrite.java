@@ -1,177 +1,107 @@
 package App;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import com.gridworld.exceptions.CoordinateException;
-import com.gridworld.exceptions.ReadException;
-import com.gridworld.grid.CoordinatePair;
-import com.gridworld.grid.Coordinates;
-import com.gridworld.grid.Grid;
-import com.gridworld.grid.GridSquare;
-import com.gridworld.grid.SquareColor;
-
+import FilterAndViterbi.filterAndViterbi;
 import Grid.grid;
+import Grid.input;
 
 public class ReadAndWrite {
-	
-	
-	
-	public static void writeGridToFile(grid grid, /*CoordinatePair coords,*/ String fileName) {
-		
-		//System.out.println("Writer called.");
-		//System.out.println("Filename is "+fileName);
-		
-		try{
-		    
-			PrintWriter writer = new PrintWriter(fileName, "UTF-8");
-		    
-		    // Get coordinates of start and goal squares, build strings, and write to file
-			
-		/*	String start = coords.sStart.toString();
-			String end = coords.sGoal.toString();
-		    writer.println(start);
-		    writer.println(end);
-		    for(int i = 0; i < grid.centersOfHardRegions.size(); i++) {
-		    	writer.println(grid.centersOfHardRegions.get(i).toString());
-		    }
-		    */
-		    for (int i = 0; i < 3; i++) {
-				for (int j = 0; j < 3; j++) {
-					writer.print("0");
-					/*if(grid.GridSquares[i][j].color == SquareColor.DARK_GRAY)
-						writer.print("0");
-					if(grid.GridSquares[i][j].color == SquareColor.WHITE && !grid.GridSquares[i][j].memberOfHorizontalHighway && !grid.GridSquares[i][j].memberOfVerticalHighway)
-						writer.print("1");
-					if(grid.GridSquares[i][j].color == SquareColor.LIGHT_GRAY && !grid.GridSquares[i][j].memberOfHorizontalHighway && !grid.GridSquares[i][j].memberOfVerticalHighway)
-						writer.print("2");
-					if(grid.GridSquares[i][j].color == SquareColor.WHITE && (grid.GridSquares[i][j].memberOfHorizontalHighway || grid.GridSquares[i][j].memberOfVerticalHighway))
-						writer.print("a");
-					if(grid.GridSquares[i][j].color == SquareColor.LIGHT_GRAY && (grid.GridSquares[i][j].memberOfHorizontalHighway || grid.GridSquares[i][j].memberOfVerticalHighway))
-						writer.print("b");*/
-				}
-				writer.println();
+
+	public static void writeGridToFile(grid grid /* CoordinatePair coords, */) {
+
+		// System.out.println("Writer called.");
+		// System.out.println("Filename is "+fileName);
+
+		try {
+			File file = new File("C:/Users/Esther/Documents/GitHub/ManyAISearches/FilterAndViterbi/file1.txt");
+
+			PrintWriter writer = new PrintWriter(file, "UTF-8");
+
+			// Get coordinates of start and goal squares, build strings, and
+			// write to file
+			Integer[] initialPoint = input.initialPoint;
+			String initPointStr = initialPoint[0] + ", " + initialPoint[1] + ", ";
+			writer.println(initPointStr);
+			for (int i = 0; i < input.consecPoints.size(); i++) {
+				Integer[] consecPoint = input.consecPoints.get(i);
+				String consecPointStr = "" + consecPoint[0] + ", " + consecPoint[1] + ", ";
+				writer.print(consecPointStr);
 			}
-		    
-		    writer.close();
+			writer.println();
+			writer.println(input.actions.toString());
+			writer.println(input.observes.toString());
+			for (int i = 0; i < input.attributes.length; i++) {
+				String attribute = input.attributes[i];
+				writer.print(attribute + ", ");
+			}
+
+			writer.println();
+
+			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		
 	}
-	
+
 	public static grid readGridFromFile(String fileName) {
 		grid grid = new grid(fileName);
 		try {
-			
+
 			// get Start and End Coordinates
 			BufferedReader br = new BufferedReader(new FileReader(fileName));
 			String line;
 			line = br.readLine();
-			String[] read = line.split(",");
+			String[] read = line.split(", ");
 			int startx = Integer.parseInt(read[0]);
 			int starty = Integer.parseInt(read[1]);
-		//	Coordinates newC = new Coordinates(startx, starty);
-			line = br.readLine();
-			String[] readNext = line.split(",");
-			int endx = Integer.parseInt(readNext[0]);
-			int endy = Integer.parseInt(readNext[1]);
-		//	Coordinates newCE = new Coordinates(endx, endy);
-		//	CoordinatePair newCP = new CoordinatePair(newC, newCE);
-		//	newCP.parent = grid;
-		//	grid.pathPoints.add(newCP);
-			
+			input.initialPoint = new Integer[] { startx, starty };
+			// Coordinates newC = new Coordinates(startx, starty);
+			// Coordinates newCE = new Coordinates(endx, endy);
+			// CoordinatePair newCP = new CoordinatePair(newC, newCE);
+			// newCP.parent = grid;
+			// grid.pathPoints.add(newCP);
 			// Centers of hard to traverse regions
-			for (int i = 0; i < 8; i++) {
-				line = br.readLine();
-				read = line.split(",");
-				int nextx = Integer.parseInt(read[0]);
-				int nexty = Integer.parseInt(read[1]);
-		//		Coordinates nextpair = new Coordinates(nextx, nexty);
-		//		grid.centersOfHardRegions.add(nextpair);
+			line = br.readLine();
+			read = line.split(", ");
+			input.consecPoints = new ArrayList<Integer[]>();
+			for (int i = 0; i < read.length; i = i + 2) {
+				int nextx = Integer.parseInt(read[i]);
+				int nexty = Integer.parseInt(read[i + 1]);
+				input.consecPoints.add(new Integer[] { nextx, nexty });
 			}
-			
-			 for (int i = 0; i < 3; i++) {
-				
-				 line = br.readLine();
-				 
-			/*	 for (int j = 0; j < 3; j++) {
-					 char curr = line.charAt(j);
-					 char next;
-					 char prev;
-					 try{
-						 prev = line.charAt(j-1);
-					 } catch (StringIndexOutOfBoundsException e) {
-						 prev = 'z';
-					 }
-					 
-					 try{
-						 next = line.charAt(j+1);
-					 } catch (StringIndexOutOfBoundsException e) {
-						 next = 'z';
-					 }
-					 
-					 if (curr == '0') {
-						 GridSquare square = new GridSquare(i, j, SquareColor.DARK_GRAY, grid);
-						 square.memberOfHorizontalHighway = false;
-						 square.memberOfVerticalHighway = false;
-						 grid.GridSquares[i][j] = square;
+			String actionString = br.readLine();
+			String[] Actions = actionString.substring(1, actionString.length() - 1).split(", ");
+			for (int i = 0; i < Actions.length; i++) {
+				input.actions.add(Actions[i]);
+			}
+			String observesString = br.readLine();
+			String[] Observes = observesString.substring(1, observesString.length() - 1).split(", ");
+			for (int i = 0; i < Observes.length; i++) {
+				input.observes.add(Observes[i]);
+			}
 
-					 }
-					 else if (curr == '1') {
-						 GridSquare square = new GridSquare(i, j, SquareColor.WHITE, grid);
-						 square.memberOfHorizontalHighway = false;
-						 square.memberOfVerticalHighway = false;
-						 grid.GridSquares[i][j] = square;
-					 }
-					 else if (curr == '2') {
-						 GridSquare square = new GridSquare(i, j, SquareColor.LIGHT_GRAY, grid);
-						 square.memberOfHorizontalHighway = false;
-						 square.memberOfVerticalHighway = false;
-						 grid.GridSquares[i][j] = square;
-					 }
-					 else if (curr == 'a') {
-						 GridSquare square = new GridSquare(i, j, SquareColor.WHITE, grid);
-						 if (next != 'a' && prev != 'a') {
-							 square.memberOfVerticalHighway = true;
-						 } else {
-							 square.memberOfHorizontalHighway = true;
-						 }
-						 grid.GridSquares[i][j] = square;
-					 }
-					 else if (curr == 'b') {
-						 GridSquare square = new GridSquare(i, j, SquareColor.LIGHT_GRAY, grid);
-						 if (next != 'a' && prev != 'a') {
-							 square.memberOfVerticalHighway = true;
-						 } else {
-							 square.memberOfHorizontalHighway = true;
-						 }
-						 grid.GridSquares[i][j] = square;
-					 }
-					 else {
-						 throw new ReadException("Read failed, file contains: "+curr);
-					 }
-					 
-				 }
-				 
-				 
-			 
-			 }*/
-			 br.close();
-			
-			
-		}} catch (IOException e) {
+			String attributeString = br.readLine();
+			input.attributes = attributeString.split(", ");
+			input.generateTruth = false;
+			Main.filteredGridList = new filterAndViterbi("viterbi");
+			br.close();
+
+		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-		
+
 		}
-		
+
 		return grid;
-	
+
 	}
-	
 
 }

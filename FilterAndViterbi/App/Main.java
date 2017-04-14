@@ -1,6 +1,7 @@
 package App;
 import java.util.HashMap;
 
+import Data.hundredExperiments;
 import FilterAndViterbi.filterAndViterbi;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -9,14 +10,9 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 public class Main extends Application {
-	// searchVal can be 1, 2 or 3
-	public static int searchVal = 1;
-	// search 1: specifies heuristic type, search 2 or 3: number of heuristics
-	public static int heuristicVal = 5;
+	
 
 	public static filterAndViterbi filteredGridList;
-	//public static HashMap<String, Double> whiteCosts = new HashMap<String, Double>();
-	//public static HashMap<String, Double> lightgrayCosts = new HashMap<String, Double>();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -41,11 +37,8 @@ public class Main extends Application {
 
 	public static void main(String[] args) {
 
-		
-			//filteredGridList = new filter();
-			filteredGridList = new filterAndViterbi("viterbi");
-			//filteredGridList.filteredGrid.get(0).printString();
-
+		//hundredExperiments generateData = new hundredExperiments("filter");
+		filteredGridList = new filterAndViterbi("viterbi");
 		launch(args);
 	}
 
